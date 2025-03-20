@@ -1,10 +1,6 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace some_bots_or_smth_idk.lib.Classes.ConsoleHelpers
+namespace COLOR_FORMAT
 {
 	/// <summary>
 	/// форматирование цвета в консоли.
@@ -13,32 +9,23 @@ namespace some_bots_or_smth_idk.lib.Classes.ConsoleHelpers
 	{
 		#region default color
 		/// <summary>
-		/// стандартное значение цвета знаков.
-		/// </summary>
-		private static ConsoleColor defaultFore;
-		/// <summary>
-		/// стандартное значение цвета фона знаков.
-		/// </summary>
-		private static ConsoleColor defaultBack;
-
-		/// <summary>
 		/// стандартное значение цвета текста.
 		/// </summary>
 		/// <returns>цвет текста в консоли перед началом работы методов.</returns>
-		public static ConsoleColor DefaultFore { get => defaultFore; }
+		public static ConsoleColor DefaultFore { get; private set; }
 		/// <summary>
 		/// стандартное значение цвета фона текста.
 		/// </summary>
-		/// <returns>цвет фона текста в консоли перед началом работы методов. </returns>
-		public static ConsoleColor DefaultBack { get => defaultBack; }
+		/// <returns>цвет фона текста в консоли перед началом работы методов.</returns>
+		public static ConsoleColor DefaultBack { get; private set; }
 
 		/// <summary>
 		/// статический конструктор для выдачи значений полям.
 		/// </summary>
 		static ColorFormat()
 		{
-			defaultFore = Console.ForegroundColor;
-			defaultBack = Console.BackgroundColor;
+			DefaultFore = Console.ForegroundColor;
+			DefaultBack = Console.BackgroundColor;
 		}
 		#endregion
 		#region parser and writer
@@ -111,6 +98,36 @@ namespace some_bots_or_smth_idk.lib.Classes.ConsoleHelpers
 			Console.ForegroundColor = DefaultFore; //возвращение цветов на те, что были до начала использования метода, после окончания работы метода.
 			Console.BackgroundColor = DefaultBack;
 		}
+		/// <summary>
+		/// выводит строку с указанными цветами и их позициями. <br/>
+		/// пример: <example>"%0 %{10}"</example>
+		/// </summary>
+		/// <remarks>
+		/// для определения места вывода используйте %{номер параметра цвета}. <br/>
+		/// или амперсанд вместо процента для смены фона.
+		/// </remarks>
+		/// <param name="value">строка, в которой используются цвета.</param>
+		/// <param name="doNotSetWithEndDefaultColor">
+		/// если значение <see langword="true"/>, <br/>
+		/// то после выведенной строки - <br/>
+		/// цвет текста и фона возвращается на тот, <br/>
+		/// что был перед первым вызовом метода.
+		/// </param>
+		/// <param name="colors">
+		/// параметры подставляемых цветов, <br/>
+		/// на которые ссылаются специальные знаки.
+		/// </param>
+		/// <exception cref="ArgumentException"/>
+		public static void Write(string value, bool doNotSetWithEndDefaultColor, params ConsoleColor[] colors)
+		{
+			Writer(value, colors); //парс текста и подстановка цветов.
+			if (!doNotSetWithEndDefaultColor) //не возвращать цвет если true
+			{
+				Console.ForegroundColor = DefaultFore; //возвращение цветов на те, что были до начала использования метода, после окончания работы метода.
+				Console.BackgroundColor = DefaultBack;
+			}
+		}
+		#endregion
 		/// <summary>
 		/// выводит строку с указанными цветами и их позициями. <br/>
 		/// пример: <example>"%0 %{10}"</example>
