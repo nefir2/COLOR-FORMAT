@@ -1,6 +1,14 @@
-﻿using System;
-namespace COLOR_FORMAT
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace some_bots_or_smth_idk.lib.Classes.ConsoleHelpers
 {
+	/// <summary>
+	/// форматирование цвета в консоли.
+	/// </summary>
 	public static class ColorFormat
 	{
 		#region default color
@@ -34,34 +42,54 @@ namespace COLOR_FORMAT
 		}
 		#endregion
 		#region parser and writer
+		#region use writer
 		/// <summary>
 		/// выводит строку с указанными цветами и их позициями. <br/>
 		/// пример: <example>"%0 %{10}"</example>
 		/// </summary>
 		/// <remarks>
 		/// для определения места вывода используйте %{номер параметра цвета}. <br/>
-		/// или амперсанд вместо процента для смены фона.
+		/// или амперсанд вместо процента для смены фона. <br/><br/>
+		/// 
+		/// после завершения работы восстанавливает цвет на тот, <br/>
+		/// что был перед первым вызовом класса. <br/><br/>
+		/// 
+		/// переносит курсор на следующую строку после завершения работы метода.
+		/// </remarks>
+		/// <param name="value">строка, в которой используются цвета</param>
+		/// <param name="colors">параметры подставляемых цветов, на которые ссылаются спец-знаки.</param>
+		/// <exception cref="ArgumentException"/>
+		public static void WriteLine(string value, params ConsoleColor[] colors)
+		{
+			Write(value, colors);
+			Console.WriteLine();
+		}
+		/// <summary>
+		/// выводит строку с указанными цветами и их позициями. <br/>
+		/// пример: <example>"%0 %{10}"</example>
+		/// </summary>
+		/// <remarks>
+		/// для определения места вывода используйте %{номер параметра цвета}. <br/>
+		/// или амперсанд вместо процента для смены фона. <br/><br/>
+		/// 
+		/// переносит курсор на следующую строку после завершения работы метода.
 		/// </remarks>
 		/// <param name="value">строка, в которой используются цвета.</param>
 		/// <param name="doNotSetWithEndDefaultColor">
 		/// если значение <see langword="true"/>, <br/>
 		/// то после выведенной строки - <br/>
-		/// цвет текста и фона не будет возвращается на тот, <br/>
-		/// что был перед началом работы метода.
+		/// цвет текста и фона возвращается на тот, <br/>
+		/// что был перед первым вызовом метода.
 		/// </param>
 		/// <param name="colors">
 		/// параметры подставляемых цветов, <br/>
 		/// на которые ссылаются специальные знаки.
 		/// </param>
 		/// <exception cref="ArgumentException"/>
-		public static void Write(string value, bool doNotSetWithEndDefaultColor, params ConsoleColor[] colors)
+		public static void WriteLine(string value, bool doNotSetWithEndDefaultColor, params ConsoleColor[] colors)
 		{
-			Writer(value, colors); //парс текста и подстановка цветов.
-			if (!doNotSetWithEndDefaultColor) //не возвращать цвет если true
-			{
-				Console.ForegroundColor = DefaultFore; //возвращение цветов на те, что были до начала использования метода, после окончания работы метода.
-				Console.BackgroundColor = DefaultBack;
-			}
+			Write(value, doNotSetWithEndDefaultColor, colors);
+			Console.WriteLine();
 		}
 		/// <summary>
 		/// выводит строку с указанными цветами и их позициями. <br/>
@@ -84,6 +112,36 @@ namespace COLOR_FORMAT
 			Console.BackgroundColor = DefaultBack;
 		}
 		/// <summary>
+		/// выводит строку с указанными цветами и их позициями. <br/>
+		/// пример: <example>"%0 %{10}"</example>
+		/// </summary>
+		/// <remarks>
+		/// для определения места вывода используйте %{номер параметра цвета}. <br/>
+		/// или амперсанд вместо процента для смены фона.
+		/// </remarks>
+		/// <param name="value">строка, в которой используются цвета.</param>
+		/// <param name="doNotSetWithEndDefaultColor">
+		/// если значение <see langword="true"/>, <br/>
+		/// то после выведенной строки - <br/>
+		/// цвет текста и фона возвращается на тот, <br/>
+		/// что был перед первым вызовом метода.
+		/// </param>
+		/// <param name="colors">
+		/// параметры подставляемых цветов, <br/>
+		/// на которые ссылаются специальные знаки.
+		/// </param>
+		/// <exception cref="ArgumentException"/>
+		public static void Write(string value, bool doNotSetWithEndDefaultColor, params ConsoleColor[] colors)
+		{
+			Writer(value, colors); //парс текста и подстановка цветов.
+			if (!doNotSetWithEndDefaultColor) //не возвращать цвет если true
+			{
+				Console.ForegroundColor = DefaultFore; //возвращение цветов на те, что были до начала использования метода, после окончания работы метода.
+				Console.BackgroundColor = DefaultBack;
+			}
+		}
+		#endregion
+		/// <summary>
 		/// скрытый метод парсера.
 		/// </summary>
 		/// <remarks>
@@ -98,6 +156,49 @@ namespace COLOR_FORMAT
 
 			for (int i = 0; i < value.Length; i++) //начало парсера. проход по массиву строки
 			{
+				if (value[i] == '~')
+				{
+					if (i != value.Length - 1)
+					{
+						if (value[i] + 1 == '~')
+						{
+							Console.Write('~');
+							i++;
+							continue;
+						}
+
+						bool isHasEnd = false;
+						int endVal = -1;
+						for (int j = i + 1; j < value.Length; j++)
+						{
+							if (value[j] != '~')
+							{
+								continue;
+							}
+
+							if (j == value.Length - 1)
+							{
+								isHasEnd = false;
+								break;
+							}
+							isHasEnd = true;
+							endVal = j + 1;
+							break;
+						}
+						if (isHasEnd)
+						{
+							for (int j = i + 1; j < endVal - 1; j++) Console.Write(value[j]);
+							i = endVal;
+						}
+						else
+						{
+							for (int j = i + 1; j < value.Length; j++) Console.Write(value[j]);
+							break;
+						}
+					}
+					else continue;
+				}
+
 				if (value[i] == '%' || value[i] == '&') //поиск ключевых знаков
 				{
 					if (i + 1 != value.Length && int.TryParse(value[i + 1].ToString(), out int arg)) //если ЭТА итерация не равна последнему элементу полученной строки И следующий знак - число
@@ -110,6 +211,7 @@ namespace COLOR_FORMAT
 					else if (value[i + 1] == '{' && !(i + 3 >= value.Length)) //иначе если следующий знак - фигурная скобка И хватает места хотя бы на одно число и закрывающую скобку (пример: %{0})
 					{
 						//сделать отмену - на случай, если понадобиться вывести текст, выглядящий как форматированный цвет, но при этом им не являющимся.
+						//идея для отмены - символ ~. 
 
 						for (int j = i + 2; j < value.Length; j++) //цикл для получения параметра в фигурных скобках.
 						{
@@ -123,6 +225,7 @@ namespace COLOR_FORMAT
 									break; //выход из цикла получения номера параметра в скобках
 								}
 								else throw new ArgumentException("указанный номер параметра не является числом."); //если не получилось - выбрасывается исключение с заданным текстом.
+																												   //как насчёт не выкидывать исключение, а выводить то что могло быть форматированием как есть?
 							}
 							else if (j == value.Length - 1) throw new ArgumentException("закрывающая скобка \"}\" не была найдена."); //если цикл дошёл до конца, но закрывающая скобка была не найдена - выбрасывается исключение.
 						}
@@ -133,7 +236,7 @@ namespace COLOR_FORMAT
 			}
 		}
 		#endregion
-		#region additional methods to parser / writer
+		#region additional methods to parser and writer
 		/// <summary> изменяет цвет последующих знаков на указанный в параметрах. </summary>
 		/// <param name="isForeground">
 		/// если <see langword="true"/> устанавливается цвет в <see cref="Console.ForegroundColor"/>, <br/>
@@ -158,7 +261,7 @@ namespace COLOR_FORMAT
 		/// <returns>вырезанная подстрока типа <see cref="string"/>.</returns>
 		/// <exception cref="ArgumentException"/>
 		/// <exception cref="IndexOutOfRangeException"/>
-		public static string Cut(string value, int start, int end)
+		private static string Cut(string value, int start, int end)
 		{
 			if (start > end) throw new ArgumentException("начальная позиция для вырезания подстроки не может быть больше конечной позиции.");
 			if (start < 0 || end < 0) throw new IndexOutOfRangeException("начало или конец вырезания подстроки не может быть меньше нуля.");
