@@ -121,10 +121,10 @@ namespace COLOR_FORMAT
 		public static void Write(string value, bool doNotSetWithEndDefaultColor, params ConsoleColor[] colors)
 		{
 			Writer(value, colors); //парс текста и подстановка цветов.
-            if (doNotSetWithEndDefaultColor) return; //не возвращать цвет если true
-            Console.ForegroundColor = DefaultFore; //возвращение цветов на те, что были до начала использования метода, после окончания работы метода.
-            Console.BackgroundColor = DefaultBack;
-        }
+			if (doNotSetWithEndDefaultColor) return; //не возвращать цвет если true
+			Console.ForegroundColor = DefaultFore; //возвращение цветов на те, что были до начала использования метода, после окончания работы метода.
+			Console.BackgroundColor = DefaultBack;
+		}
 		#endregion
 		/// <summary>
 		/// скрытый метод парсера.
@@ -215,9 +215,9 @@ namespace COLOR_FORMAT
 							else if (j == value.Length - 1) throw new ArgumentException("закрывающая скобка \"}\" не была найдена."); //если цикл дошёл до конца, но закрывающая скобка была не найдена - выбрасывается исключение.
 						}
 					}
-					else Console.Write(value[i]); //если ключевой знак не найден - вывод знака итерации в консоль.
+					else Console.Out.Write(value[i]); //если ключевой знак не найден - вывод знака итерации в консоль.
 				}
-				else Console.Write(value[i]); //если никаких ключевых знаков не найдено - вывод знака в этой итерации в консоль.
+				else Console.Out.Write(value[i]); //если никаких ключевых знаков не найдено - вывод знака в этой итерации в консоль.
 			}
 		}
 		#endregion
