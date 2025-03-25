@@ -7,7 +7,36 @@ namespace COLOR_FORMAT
 	/// </summary>
 	public static class ColorFormat
 	{
-		#region default color
+		#region constants
+		/// <summary>
+		/// знак, который определяется как указание смены цвета текста.
+		/// </summary>
+		public const char FORE_SIGN = '%';
+		/// <summary>
+		/// знак, который определяется как указание смены цвета фона текста.
+		/// </summary>
+		public const char BACK_SIGN = '&';
+		/// <summary>
+		/// знак, после и до которого не меняется цвет текста.
+		/// </summary>
+		/// <remarks>
+		/// всё что идёт после этого знака - <see cref="Writer(string, ConsoleColor[])"/> не преобразовывает цвета, в плоть до конца строки или этого же знака.
+		/// </remarks>
+		public const char STOP_SIGN = '~';
+		/// <summary>
+		/// открывающая скобка.
+		/// </summary>
+		/// <remarks>
+		/// рассчитано на использование в случае если аргументов с цветом больше 9.
+		/// </remarks>
+		public const char OPEN_BRACKET_SIGN = '{';
+		/// <summary>
+		/// закрывающая скобка.
+		/// </summary>
+		/// <remarks>
+		/// рассчитано на использование в случае если аргументов с цветом больше 9.
+		/// </remarks>
+		public const char CLOSE_BRACKET_SIGN = '}';
 		/// <summary>
 		/// стандартное значение цвета текста.
 		/// </summary>
@@ -27,7 +56,7 @@ namespace COLOR_FORMAT
 			DefaultFore = Console.ForegroundColor;
 			DefaultBack = Console.BackgroundColor;
 		}
-		#endregion
+		#endregion cnsts
 		#region parser and writer
 		#region use writer
 		/// <summary>
@@ -52,25 +81,30 @@ namespace COLOR_FORMAT
 			Console.WriteLine();
 		}
 		/// <summary>
-		/// выводит строку с указанными цветами и их позициями. <br/>
-		/// пример: <example>"%0 %{10}"</example>
+		///	выводит строку с указанными цветами и их позициями. <br/>
+		///	пример: <example>"%0 %{10}"</example>
 		/// </summary>
 		/// <remarks>
-		/// для определения места вывода используйте %{номер параметра цвета}. <br/>
-		/// или амперсанд вместо процента для смены фона. <br/><br/>
+		///	для определения места вывода используйте %{номер параметра цвета}. <br/>
+		///	или амперсанд вместо процента для смены фона. <br/><br/>
 		/// 
-		/// переносит курсор на следующую строку после завершения работы метода.
+		///	переносит курсор на следующую строку после завершения работы метода.
+		/// <example>
+		///	<code>
+		///	ColorFormat.WriteLine("%0text %1text1");
+		///	</code>
+		/// </example>
 		/// </remarks>
 		/// <param name="value">строка, в которой используются цвета.</param>
 		/// <param name="doNotSetWithEndDefaultColor">
-		/// если значение <see langword="true"/>, <br/>
-		/// то после выведенной строки - <br/>
-		/// цвет текста и фона возвращается на тот, <br/>
-		/// что был перед первым вызовом метода.
+		///	если значение <see langword="true"/>, <br/>
+		///	то после выведенной строки - <br/>
+		///	цвет текста и фона возвращается на тот, <br/>
+		///	что был перед первым вызовом метода.
 		/// </param>
 		/// <param name="colors">
-		/// параметры подставляемых цветов, <br/>
-		/// на которые ссылаются специальные знаки.
+		///	параметры подставляемых цветов, <br/>
+		///	на которые ссылаются специальные знаки.
 		/// </param>
 		/// <exception cref="ArgumentException"/>
 		public static void WriteLine(string value, bool doNotSetWithEndDefaultColor, params ConsoleColor[] colors)
@@ -141,13 +175,13 @@ namespace COLOR_FORMAT
 
 			for (int i = 0; i < value.Length; i++) //начало парсера. проход по массиву строки
 			{
-				if (value[i] == '~')
+				if (value[i] == STOP_SIGN) //парсер стоп знака.
 				{
 					if (i != value.Length - 1)
 					{
-						if (value[i] + 1 == '~')
+						if (value[i] + 1 == STOP_SIGN)
 						{
-							Console.Write('~');
+							Console.Write(STOP_SIGN);
 							i++;
 							continue;
 						}
@@ -156,7 +190,7 @@ namespace COLOR_FORMAT
 						int endVal = -1;
 						for (int j = i + 1; j < value.Length; j++)
 						{
-							if (value[j] != '~')
+							if (value[j] != STOP_SIGN)
 							{
 								continue;
 							}
@@ -184,27 +218,28 @@ namespace COLOR_FORMAT
 					else continue;
 				}
 
-				if (value[i] == '%' || value[i] == '&') //поиск ключевых знаков
+				if (value[i] == FORE_SIGN || value[i] == BACK_SIGN) //поиск ключевых знаков
 				{
+					//как насчёт парсить отрицательные числа? чтобы не указывать явно после строки 'colorformat.defaultfore', а просто указать "%-1" в самой строке ?
 					if (i + 1 != value.Length && int.TryParse(value[i + 1].ToString(), out int arg)) //если ЭТА итерация не равна последнему элементу полученной строки И следующий знак - число
 					{
-						try { ChangeColor(value[i] == '%', colors[arg]); } //попытка установить указанный цвет.
+						try { ChangeColor(value[i] == FORE_SIGN, colors[arg]); } //попытка установить указанный цвет.
 						catch { throw new ArgumentException("указанный параметр не был найден.", nameof(colors)); } //при неудаче выбрасывается исключение с заданным сообщением.
 						i++; //номер указанного цвета не выводится
 						continue; //продолжается поиск ключевых знаков в строке.
 					}
-					else if (value[i + 1] == '{' && !(i + 3 >= value.Length)) //иначе если следующий знак - фигурная скобка И хватает места хотя бы на одно число и закрывающую скобку (пример: %{0})
+					else if (value[i + 1] == OPEN_BRACKET_SIGN && !(i + 3 >= value.Length)) //иначе если следующий знак - фигурная скобка И хватает места хотя бы на одно число и закрывающую скобку (пример: %{0})
 					{
 						//сделать отмену - на случай, если понадобиться вывести текст, выглядящий как форматированный цвет, но при этом им не являющимся.
 						//идея для отмены - символ ~. 
 
 						for (int j = i + 2; j < value.Length; j++) //цикл для получения параметра в фигурных скобках.
 						{
-							if (value[j] == '}') //если найдена закрывающая фигурная скобка
+							if (value[j] == CLOSE_BRACKET_SIGN) //если найдена закрывающая фигурная скобка
 							{
 								if (int.TryParse(Cut(value, i + 2, j), out arg)) //попытка получить число в фигурных скобках
 								{
-									try { ChangeColor(value[i] == '%', colors[arg]); } //смена цвета на указанный цвет в параметрах
+									try { ChangeColor(value[i] == FORE_SIGN, colors[arg]); } //смена цвета на указанный цвет в параметрах
 									catch { throw new ArgumentException("указанный параметр не был найден.", nameof(colors)); } //если указанного цвета в параметрах нет - выбрасывается исключение с заданным текстом.
 									i = j; //параметры цветов не выводятся
 									break; //выход из цикла получения номера параметра в скобках
@@ -212,7 +247,7 @@ namespace COLOR_FORMAT
 								else throw new ArgumentException("указанный номер параметра не является числом."); //если не получилось - выбрасывается исключение с заданным текстом.
 																												   //как насчёт не выкидывать исключение, а выводить то что могло быть форматированием как есть?
 							}
-							else if (j == value.Length - 1) throw new ArgumentException("закрывающая скобка \"}\" не была найдена."); //если цикл дошёл до конца, но закрывающая скобка была не найдена - выбрасывается исключение.
+							else if (j == value.Length - 1) throw new ArgumentException($"закрывающая скобка \"{CLOSE_BRACKET_SIGN}\" не была найдена."); //если цикл дошёл до конца, но закрывающая скобка была не найдена - выбрасывается исключение.
 						}
 					}
 					else Console.Out.Write(value[i]); //если ключевой знак не найден - вывод знака итерации в консоль.
